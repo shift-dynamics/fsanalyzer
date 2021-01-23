@@ -5,8 +5,8 @@ class Frame:
 
     def __init__(self, name="origin", x=0.0, y=0.0, theta=0.0):
         self.name = name
-        c = np.cos(theta)
-        s = np.sin(theta)
+        c = np.cos(np.radians(theta))
+        s = np.sin(np.radians(theta))
         self.relative = np.matrix([[c, -s, x], [s, c, y], [0.0, 0.0, 1.0]])
         self.absolute = np.matrix(np.eye(3, 3))
         self.parent = None

@@ -8,9 +8,9 @@ Not much here yet, check back later.
 
 
 ## Installation
-This step installs the required `matplotlib` and `numpy` dependencies
-if they are not already available on your machine and installs the `fsanalyzer`
-package to your python path.
+This step installs the required `matplotlib`, `numpy` and `pyyaml` dependencies
+if they are not already available on your machine. It also installs the 
+`fsanalyzer` package to your python path.
 ```
 git clone https://github.com/shift-dynamics/fsanalyzer
 cd fsanalyzer

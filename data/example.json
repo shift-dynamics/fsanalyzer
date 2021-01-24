@@ -98,7 +98,7 @@
     "joints": [
         {
             "name": "A",
-            "link_frame_pair:": [
+            "link_frame_pair": [
                 ["front_triangle", "chain_stay_attachment"],
                 ["chain_stay_link", "origin"]
             ],

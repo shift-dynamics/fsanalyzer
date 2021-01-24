@@ -1,8 +1,10 @@
+description: Example suspension layout
+
 center_of_mass:
   comment: height based off of https://www.pinkbike.com/news/behind-the-numbers-enduro-category-round-up.html,
     actual CoM should be adjusted for frame size and rider
   height: 1150.0
-description: Example suspension layout
+
 drive_train:
   front_chainrings:
   - 32
@@ -19,48 +21,41 @@ drive_train:
   - 36
   - 42
   - 50
+
 fork:
   axle_to_crown: 537.0
   offset: 44.0
   travel: 130.0
-joints:
-- initial_position: 0.0
-  link_frame_pair:
-  - - front_triangle
-    - chain_stay_attachment
-  - - chain_stay_link
-    - origin
-  name: A
-- initial_position: 0.0
-  link_frame_pair:
-  - - chain_stay_link
-    - distal
-  - - seat_stay_link
-    - chain_stay_attachment
-  name: B
-- link_frame_pair:
-  - - seat_stay_link
-    - rocker_link_attachment
-  - - rocker_link
-    - chain_stay_attachment
-  name: C
-- initial_position: 0.0
-  link_frame_pair:
-  - - rocker_link
-    - shock_attachment
-  - - shock_upper
-    - origin
-  name: D
-- initial_position: 0.0
-  link_frame_pair:
-  - - shock_lower
-    - origin
-  - - front_triangle
-    - shock_attachment
-  name: E
+
+shock:
+  eye_to_eye: 190.0
+  stroke: 45.0
+
+units:
+  angular: degrees
+  linear: mm
+
+wheels:
+  front:
+    comment: based off of 29x2.6 Schwalbe Nobby Nic,
+      https://www.mtbr.com/threads/schwalbe-nobby-nic-or-similar-29-x-2-6-outside-diameter.1045726/
+    diameter: 752.0
+  rear:
+    attachment_link: seat_stay_link
+    comment: based off of 29x2.6 Schwalbe Nobby Nic, 
+      https://www.mtbr.com/threads/schwalbe-nobby-nic-or-similar-29-x-2-6-outside-diameter.1045726/
+    diameter: 752.0
+
+geometry:
+  bb_drop: 40.0
+  head_tube_angle: 66.0
+  reach: 475.0
+  stack: 622.0
+  chain_stay_length: 432.0
+
 links:
-- bb_drop: 40.0
-  description: origin at bottom bracket, front triangle is a reserved key word, front
+- name: front_triangle
+  description: origin at bottom of head tube, front triangle is a reserved key word, front
     suspension kinematics will be added to front triangle based on fork dimensions,
     stack and reach
   frames:
@@ -76,18 +71,15 @@ links:
     offset:
     - 30.0
     - 40.0
-  head_tube_angle: 66.0
-  name: front_triangle
-  reach: 475.0
-  stack: 622.0
-- description: origin at proximal end of link (closer to bike front triangle)
+- name: chain_stay_link
+  description: origin at proximal end of link (closer to bike front triangle)
   frames:
   - name: distal
     offset:
     - -400.0
     - -20.0
-  name: chain_stay_link
-- description: origin at rear wheel axle
+- name: seat_stay_link
+  description: origin at rear wheel axle
   frames:
   - name: chain_stay_attachment
     offset:
@@ -97,8 +89,8 @@ links:
     offset:
     - 400.0
     - 200.0
-  name: seat_stay_link
-- description: origin at attachment to frame front triangle
+- name: rocker_link
+  description: origin at attachment to frame front triangle
   frames:
   - name: seat_stay_attachment
     offset:
@@ -108,19 +100,39 @@ links:
     offset:
     - 30.0
     - 25.0
-  name: rocker_link
-shock:
-  eye_to_eye: 190.0
-  stroke: 45.0
-units:
-  angular: degrees
-  linear: mm
-wheels:
-  front:
-    comment: 'based off of 29x2.6" Schwalbe Nobby Nic: https://www.mtbr.com/threads/schwalbe-nobby-nic-or-similar-29-x-2-6-outside-diameter.1045726/'
-    diameter: 752.0
-  rear:
-    attachment_link: seat_stay_link
-    chain_stay_length: 432.0
-    comment: 'based off of 29x2.6" Schwalbe Nobby Nic: https://www.mtbr.com/threads/schwalbe-nobby-nic-or-similar-29-x-2-6-outside-diameter.1045726/'
-    diameter: 752.0
+
+joints:
+- name: A
+  initial_position: 0.0
+  link_frame_pair:
+  - - front_triangle
+    - chain_stay_attachment
+  - - chain_stay_link
+    - origin
+- name: B
+  initial_position: 0.0
+  link_frame_pair:
+  - - chain_stay_link
+    - distal
+  - - seat_stay_link
+    - chain_stay_attachment
+- name: C
+  link_frame_pair:
+  - - seat_stay_link
+    - rocker_link_attachment
+  - - rocker_link
+    - chain_stay_attachment
+- name: D
+  initial_position: 0.0
+  link_frame_pair:
+  - - rocker_link
+    - shock_attachment
+  - - shock_upper
+    - origin
+- name: E
+  initial_position: 0.0
+  link_frame_pair:
+  - - shock_lower
+    - origin
+  - - front_triangle
+    - shock_attachment

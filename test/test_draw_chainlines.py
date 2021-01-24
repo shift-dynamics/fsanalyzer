@@ -29,7 +29,6 @@ if __name__ == "__main__":
     for ring in rear_chainrings:
         r2 = chain_ring_radius(ring)
         ax.add_artist(Circle(p2, r2, fill=False, edgecolor="blue"))
-        d2 = np.sqrt(np.linalg.norm(d1)**2 - (r2 - r1)**2)
         theta2 = np.arccos((r2 - r1) / np.linalg.norm(d1))
         theta3 = theta1 - theta2
 

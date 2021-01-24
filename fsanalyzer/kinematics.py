@@ -1,51 +1,38 @@
-#!/usr/bin/env python
 import json
+import yaml
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 
 from .wheel import Wheel
 from .link import Link
 from .joint import PrismaticJoint, RevoluteJoint, RigidJoint
 from .frame import Frame
-
-
-def chain_ring_radius(n, pitch=12.7):
-    return pitch / (2 * np.sin(np.pi / n))
-
-
-def line_intersection(l1, l2):
-    p1 = l1[0]
-    p2 = l1[1]
-    p3 = l2[0]
-    p4 = l2[1]
-    x1 = p1[0]
-    y1 = p1[1]
-    x2 = p2[0]
-    y2 = p2[1]
-    x3 = p3[0]
-    y3 = p3[1]
-    x4 = p4[0]
-    y4 = p4[1]
-    return [
-        ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3  * x4)) /
-        ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)),
-        ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3  * x4)) /
-        ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4))
-    ]
+from . import geometry
 
 
 class FsAnalyzer:
 
-    def __init__(self, json_file):
-        with open(json_file) as f:
-            self.config = json.load(f)
+    def __init__(self, input_file):
+        p = Path(input_file)
+        if not p.exists():
+            raise Exception(f"Input file {input_file} does not exist")
+        if p.suffix == ".yaml":
+            print(f"loading yaml file: {input_file}")
+            with p.open() as f:
+                self.config = yaml.safe_load(f)
+        elif p.suffix == ".json":
+            print(f"loading json file: {input_file}")
+            with p.open() as f:
+               self.config = json.load(f)
+        else:
+            raise Exception(f"Unrecognized extension '{p.suffix}', only json "
+                            "and yaml supported")
         self.links = []
         self.joints = []
         self.generate_kinematics()
-        # self.draw()
 
     def generate_kinematics(self):
-
         fixed_link = Link("fixed_link")
         self.links.append(fixed_link)
 
@@ -61,14 +48,6 @@ class FsAnalyzer:
         self.joints.append(front_axle_mount)
         front_axle_mount.update(None, None)
 
-        # add suspension fork link
-        front_triangle = None
-        for value in self.config["links"]:
-            if value["name"] == "front_triangle":
-                front_triangle = value
-                break
-        else:
-            raise Exception("No front_triangle link specified in input file")
         suspension_lower = Link("suspension_lower")
         suspension_lower.add_frame(
             Frame(name="distal", x=-self.config["fork"]["offset"],
@@ -81,7 +60,7 @@ class FsAnalyzer:
         front_axle = RevoluteJoint(
             front_wheel.get_frame("origin"),
             suspension_lower.get_frame("origin"),
-            initial_position=90.0 - front_triangle["head_tube_angle"])
+            initial_position=90.0 - self.config["geometry"]["head_tube_angle"])
         self.joints.append(front_axle)
         suspension_lower.update()
         self.links.append(suspension_lower)
@@ -90,7 +69,7 @@ class FsAnalyzer:
         suspension_upper.add_frame(
             Frame(name="distal", x=0.0,
                   y=self.config["fork"]["axle_to_crown"] / 2.0,
-                  theta=front_triangle["head_tube_angle"] - 90.0))
+                  theta=self.config["geometry"]["head_tube_angle"] - 90.0))
         suspension = PrismaticJoint(
             suspension_lower.get_frame("distal"),
             suspension_upper.get_frame("origin"),
@@ -102,51 +81,54 @@ class FsAnalyzer:
 
         # draw frame
         # get position of bottom of steerer tube
-        lower_steerer_tube = suspension_upper.get_frame("distal").absolute[:, 2][:2]
-        print(lower_steerer_tube)
+        lower_steerer_tube = \
+            suspension_upper.get_frame("distal").absolute[:, 2][:2]
 
         # height of bottom bracket
-        bb_height_absolute = front_wheel_radius - front_triangle["bb_drop"]
-        frame = Link("frame")
+        bb_height_absolute = \
+            front_wheel_radius - self.config["geometry"]["bb_drop"]
+        front_triangle = Link("front_triangle")
 
-        top_of_head_tube_absolute = bb_height_absolute + front_triangle["stack"]
+        top_of_head_tube_absolute = \
+            bb_height_absolute + self.config["geometry"]["stack"]
         y = top_of_head_tube_absolute - lower_steerer_tube[1, 0]
-        x = -y * np.tan(np.radians(90.0 - front_triangle["head_tube_angle"]))
+        x = -y * np.tan(
+            np.radians(90.0 - self.config["geometry"]["head_tube_angle"]))
 
-        frame.add_frame(
+        front_triangle.add_frame(
             Frame(name="top_of_head_tube", x=x, y=y))
-        frame.add_frame(
+        front_triangle.add_frame(
             Frame(name="bottom_bracket",
-                  x=-front_triangle["reach"] + x,
+                  x=-self.config["geometry"]["reach"] + x,
                   y=-lower_steerer_tube[1, 0] + bb_height_absolute))
         head_tube_joint = RigidJoint(
             suspension_upper.get_frame("distal"),
-            frame.get_frame("origin"))
+            front_triangle.get_frame("origin"))
         head_tube_joint.update(None, None)
         self.joints.append(head_tube_joint)
-        frame.update()
-
-        frame.update()
-        self.links.append(frame)
+        front_triangle.update()
+        self.links.append(front_triangle)
 
         for i, ring in \
                 enumerate(self.config["drive_train"]["front_chainrings"]):
-            sprocket = Wheel(f"front_sprocket_{i}", chain_ring_radius(ring))
-            joint = RigidJoint(frame.get_frame("bottom_bracket"),
+            sprocket = Wheel(
+                f"front_sprocket_{i}", geometry.chain_ring_radius(ring))
+            joint = RigidJoint(front_triangle.get_frame("bottom_bracket"),
                                sprocket.get_frame("origin"))
             self.joints.append(joint)
             joint.update(None, None)
             self.links.append(sprocket)
 
         # add a placeholder rear wheel
-        r = self.config["wheels"]["rear"]["chain_stay_length"]
-        x = np.sqrt(np.abs(r**2 - front_triangle["bb_drop"]**2))
+        r = self.config["geometry"]["chain_stay_length"]
+        x = np.sqrt(np.abs(r**2 - self.config["geometry"]["bb_drop"]**2))
         fixed_link.add_frame(
             Frame(name="rear_wheel",
-                  x=-x + frame.get_frame("bottom_bracket").absolute[0, 2],
+                  x=-x + front_triangle.get_frame(
+                      "bottom_bracket").absolute[0, 2],
                   y=front_wheel_radius))
         fixed_link.update()
-        print(frame.get_frame("bottom_bracket").absolute[0, 2])
+        print(front_triangle.get_frame("bottom_bracket").absolute[0, 2])
 
         rear_wheel = Wheel("rear_wheel", front_wheel_radius)
         rear_wheel_attachment = RigidJoint(
@@ -157,7 +139,7 @@ class FsAnalyzer:
 
         for i, ring in \
                 enumerate(self.config["drive_train"]["rear_chainrings"]):
-            r2 = chain_ring_radius(ring)
+            r2 = geometry.chain_ring_radius(ring)
             sprocket = Wheel(f"rear_sprocket_{i}", r2)
             joint = RigidJoint(rear_wheel.get_frame("origin"),
                                sprocket.get_frame("origin"))
@@ -173,12 +155,12 @@ class FsAnalyzer:
             raise Exception(f"Could not find link {name}")
 
     def draw_chainlines(self, ax, ax2=None):
-        frame = self.get_link("frame")
+        front_triangle = self.get_link("front_triangle")
         rear_wheel = self.get_link("rear_wheel")
 
-        r1 = chain_ring_radius(
+        r1 = geometry.chain_ring_radius(
             self.config["drive_train"]["front_chainrings"][0])
-        p1 = frame.get_frame("bottom_bracket").absolute[:2, 2]
+        p1 = front_triangle.get_frame("bottom_bracket").absolute[:2, 2]
         p2 = rear_wheel.get_frame("origin").absolute[:2, 2]
 
         # draw instant center (@TODO get this from suspension geometry, just
@@ -198,7 +180,7 @@ class FsAnalyzer:
         antisquat = []
         for i, ring in \
                 enumerate(self.config["drive_train"]["rear_chainrings"]):
-            r2 = chain_ring_radius(ring)
+            r2 = geometry.chain_ring_radius(ring)
             theta2 = np.arccos((r2 - r1) / d1_norm)
             theta3 = theta1 - theta2
 
@@ -212,10 +194,11 @@ class FsAnalyzer:
 
             # find intersection between chainline and line drawn from rear
             # hub to instant center
-            intercept = line_intersection([c1, c2], [[p2[0, 0], p2[1, 0]], ic])
+            intercept = geometry.line_intersection(
+                [c1, c2], [[p2[0, 0], p2[1, 0]], ic])
             ax.plot(intercept[0], intercept[1], color="red", marker="o")
 
-            antisquat_intercept = line_intersection(
+            antisquat_intercept = geometry.line_intersection(
                 [[p2[0, 0], 0.0], intercept], [[0.0, 0.0], [0.0, 100.0]])
             ax.plot([p2[0, 0], antisquat_intercept[0]],
                     [0.0, antisquat_intercept[1]], color="red")
@@ -225,16 +208,11 @@ class FsAnalyzer:
         if ax2 is not None:
             ax2.scatter([0] * len(antisquat), antisquat)
 
-        bb_x = frame.get_frame("bottom_bracket").absolute[0, 2]
+        bb_x = front_triangle.get_frame("bottom_bracket").absolute[0, 2]
         ax.plot([0.0, 0.0], [0.0, com + 50.0],
                 color="black", linestyle="--")
         ax.plot([bb_x, 50.0], [com, com], color="black", linestyle="--")
         ax.text(50.0, com, "100% antisquat", verticalalignment="center")
-
-
-
-
-
 
     def draw(self):
         fig, ax = plt.subplots(2, 1)

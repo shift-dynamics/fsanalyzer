@@ -11,5 +11,6 @@ if __name__ == "__main__":
         install_requires=[
             "numpy>=1.14.5",
             "matplotlib>=2.2.0",
+            "pyyaml"
         ]
     )

@@ -49,7 +49,7 @@ class Link:
                     np.matrix([[point[0]], [point[1]], [1.0]])
                 x.append(transformed_point[0, 0])
                 y.append(transformed_point[1, 0])
-            ax.plot(x, y, color="green", marker="o")
+            ax.plot(x, y, color="green")
         else:
             if len(self.frames) > 1:
                 offset = [self.frames[0].absolute[0, 2],

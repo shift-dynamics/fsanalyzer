@@ -9,18 +9,17 @@ class Frame:
         s = np.sin(np.radians(theta))
         self.relative = np.matrix([[c, -s, x], [s, c, y], [0.0, 0.0, 1.0]])
         self.absolute = np.matrix(np.eye(3, 3))
-        self.parent = None
+        self.parent_frame = None
+        self.parent_body = None
 
-    def set_parent(self, parent):
-        self.parent = parent
+    def set_parent_frame(self, parent_frame):
+        self.parent_frame = parent_frame
+
+    def set_parent_body(self, parent_body):
+        self.parent_body = parent_body
 
     def update(self):
-        print(f"updating frame: {self.name}")
-        print("parent:")
-        print(self.parent.absolute)
-        self.absolute = self.parent.absolute * self.relative
-        print("this:")
-        print(self.absolute)
+        self.absolute = self.parent_frame.absolute * self.relative
 
     def draw(self, ax, scale=1.0, draw_label=True):
         origin = self.absolute * np.matrix([[0.0], [0.0], [1.0]])

@@ -7,7 +7,9 @@ class Wheel(Link):
 
     def __init__(self, name, radius, color='Blue'):
         self.name = name
-        self.frames = [Frame()]
+        origin = Frame()
+        origin.set_parent_body(self)
+        self.frames = [origin]
         self.radius = radius
         self.color = color
 

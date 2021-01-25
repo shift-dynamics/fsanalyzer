@@ -8,16 +8,19 @@ class Link:
     def __init__(self, name):
         self.name = name
         # append origin to list of frames
-        self.frames = [Frame()]
+        origin = Frame()
+        origin.set_parent_body(self)
+        self.frames = [origin]
         self.points = None
 
     def add_frame(self, frame):
-        frame.set_parent(self.frames[0])
         for f in self.frames:
             if f.name == frame.name:
                 raise Exception(
                     f"Cannot add frame {frame.name} to link {self.name}, "
                     "frame with the same name already exists")
+        frame.set_parent_frame(self.frames[0])
+        frame.set_parent_body(self)
         self.frames.append(frame)
 
     def add_points(self, points):

@@ -3,6 +3,8 @@ import yaml
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
+from collections import namedtuple
+from math import *  # noqa: F403, F401
 
 from .wheel import Wheel
 from .link import Link
@@ -24,7 +26,7 @@ class FsAnalyzer:
         elif p.suffix == ".json":
             print(f"loading json file: {input_file}")
             with p.open() as f:
-               self.config = json.load(f)
+                self.config = json.load(f)
         else:
             raise Exception(f"Unrecognized extension '{p.suffix}', only json "
                             "and yaml supported")
@@ -79,7 +81,7 @@ class FsAnalyzer:
 
         self.links.append(suspension_upper)
 
-        # draw frame
+        # draw frame front triangle
         # get position of bottom of steerer tube
         lower_steerer_tube = \
             suspension_upper.get_frame("distal").absolute[:, 2][:2]
@@ -87,6 +89,7 @@ class FsAnalyzer:
         # height of bottom bracket
         bb_height_absolute = \
             front_wheel_radius - self.config["geometry"]["bb_drop"]
+
         front_triangle = Link("front_triangle")
 
         top_of_head_tube_absolute = \
@@ -106,9 +109,80 @@ class FsAnalyzer:
             front_triangle.get_frame("origin"))
         head_tube_joint.update(None, None)
         self.joints.append(head_tube_joint)
+
+        # add links specified in input file
+        front_triangle_config = None
+        for link in self.config["links"]:
+            if link["name"] == "front_triangle":
+                front_triangle_config = link
+                break
+        else:
+            raise Exception(
+                "Could not find link `front_triangle` in input file")
+        Vec2 = namedtuple('Vec2', 'x, y')
+        bottom_bracket = Vec2(
+            front_triangle.get_frame("bottom_bracket").relative[0, 2],
+            front_triangle.get_frame("bottom_bracket").relative[1, 2])
+
+        # list of safe methods for use in code
+        safe_list = ['acos', 'asin', 'atan', 'atan2', 'ceil', 'cos',
+                     'cosh', 'degrees', 'e', 'exp', 'fabs', 'floor',
+                     'fmod', 'frexp', 'hypot', 'ldexp', 'log', 'log10',
+                     'modf', 'pi', 'pow', 'radians', 'sin', 'sinh', 'sqrt',
+                     'tan', 'tanh']
+        safe_dict = dict([(k, locals().get(k, None)) for k in safe_list])
+        safe_dict["bottom_bracket"] = bottom_bracket
+
+        for frame in front_triangle_config["frames"]:
+            x_offset = None
+            y_offset = None
+            try:
+                x_offset = float(frame["offset"][0])
+            except ValueError:
+                try:
+                    x_offset = float(eval(frame["offset"][0],
+                                     {"__builtins__": None}, safe_dict))
+                except ValueError:
+                    raise Exception(
+                        f"Problem parsing x offset in {frame['name']}")
+            try:
+                y_offset = float(frame["offset"][0])
+            except ValueError:
+                try:
+                    y_offset = float(eval(frame["offset"][1],
+                                     {"__builtins__": None}, safe_dict))
+                except ValueError:
+                    raise Exception(
+                        f"Problem parsing y offset in {frame['name']}")
+            front_triangle.add_frame(
+                Frame(name=frame["name"], x=x_offset, y=y_offset))
+
         front_triangle.update()
         self.links.append(front_triangle)
 
+        # add rear linkage by adding remaining links in input file
+        for link_ in self.config["links"]:
+            if link_["name"] == "front_triangle":
+                # we already added the front_triangle above
+                continue
+            link = Link(link_["name"])
+            for frame in link_["frames"]:
+                link.add_frame(
+                    Frame(name=frame["name"],
+                          x=frame["offset"][0],
+                          y=frame["offset"][1]))
+            self.links.append(link)
+
+        for joint_ in self.config["joints"]:
+            parent = \
+                self.get_link(joint_["link_frame_pair"][0][0]).get_frame(
+                    joint_["link_frame_pair"][0][1])
+            child = \
+                self.get_link(joint_["link_frame_pair"][1][0]).get_frame(
+                    joint_["link_frame_pair"][1][1])
+            self.joints.append(RevoluteJoint(parent, child))
+
+        # add chainrings
         for i, ring in \
                 enumerate(self.config["drive_train"]["front_chainrings"]):
             sprocket = Wheel(

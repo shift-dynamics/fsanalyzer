@@ -1,7 +1,8 @@
 description: Example suspension layout
 
 center_of_mass:
-  comment: height based off of https://www.pinkbike.com/news/behind-the-numbers-enduro-category-round-up.html,
+  comment: height based on 
+    https://www.pinkbike.com/news/behind-the-numbers-enduro-category-round-up.html,
     actual CoM should be adjusted for frame size and rider
   height: 1150.0
 
@@ -37,14 +38,17 @@ units:
 
 wheels:
   front:
-    comment: based off of 29x2.6 Schwalbe Nobby Nic,
+    comment: based on 29x2.6 Schwalbe Nobby Nic,
       https://www.mtbr.com/threads/schwalbe-nobby-nic-or-similar-29-x-2-6-outside-diameter.1045726/
     diameter: 752.0
   rear:
-    attachment_link: seat_stay_link
-    comment: based off of 29x2.6 Schwalbe Nobby Nic, 
+    comment: based on 29x2.6 Schwalbe Nobby Nic, 
       https://www.mtbr.com/threads/schwalbe-nobby-nic-or-similar-29-x-2-6-outside-diameter.1045726/
+      `attachment_link` can be either `seat_stay_link` to specify a four-bar
+      linkage with a virtual pivot, or `chain_stay_link` to specify a faux-bar
+      with a fixed instant center
     diameter: 752.0
+    attachment_link: seat_stay_link
 
 geometry:
   bb_drop: 40.0
@@ -55,31 +59,39 @@ geometry:
 
 links:
 - name: front_triangle
-  description: origin at bottom of head tube, front triangle is a reserved key word, front
-    suspension kinematics will be added to front triangle based on fork dimensions,
-    stack and reach
+  description: origin at bottom of head tube, front triangle is a required link
+    The following frame names are added automatically and cannot be used
+    as link names below - `bottom_bracket` and `top_of_head_tube`. 
+    For convenience, the bottom_bracket.x and bottom_bracket.y 
+    variables allow specifying dimensions relative to bottom bracket 
+    location, which is added automatically based on the stack, reach and fork
+    geometry.  This allows fixing suspension geometry relative to bottom bracket, 
+    while experimenting with changing stack and reach dimensions. At 
+    present, the front_triangle is the only link that supports an additional
+    keyword to specify dimensions relative to another frame.
   frames:
   - name: chain_stay_attachment
     offset:
-    - 40.0
-    - 20.0
+    - bottom_bracket.x - 40.0
+    - bottom_bracket.y + 20.0
   - name: rocker_link_attachment
     offset:
-    - 100.0
-    - 10.0
+    - bottom_bracket.x - 10.0
+    - bottom_bracket.y + 100.0
   - name: shock_attachment
     offset:
-    - 30.0
-    - 40.0
+    - bottom_bracket.x + 30.0
+    - bottom_bracket.y + 40.0
 - name: chain_stay_link
-  description: origin at proximal end of link (closer to bike front triangle)
+  description: origin at proximal end of link (closer to bike front triangle),
+    chain_stay_link is a required link name
   frames:
   - name: distal
     offset:
     - -400.0
     - -20.0
 - name: seat_stay_link
-  description: origin at rear wheel axle
+  description: origin at rear wheel axle, seat_stay_link is a required link name
   frames:
   - name: chain_stay_attachment
     offset:
@@ -102,37 +114,31 @@ links:
     - 25.0
 
 joints:
-- name: A
+- name: front_triangle_to_chain_stay_link
   initial_position: 0.0
   link_frame_pair:
   - - front_triangle
     - chain_stay_attachment
   - - chain_stay_link
     - origin
-- name: B
+- name: front_triangle_to_rocker_link
+  initial_position: 0.0
+  link_frame_pair:
+  - - front_triangle
+    - rocker_link_attachment
+  - - rocker_link
+    - origin
+- name: chain_stay_link_to_seat_stay_link
   initial_position: 0.0
   link_frame_pair:
   - - chain_stay_link
     - distal
   - - seat_stay_link
     - chain_stay_attachment
-- name: C
+- name: seat_stay_link_to_rocker_link
+  initial_position: 0.0
   link_frame_pair:
   - - seat_stay_link
     - rocker_link_attachment
   - - rocker_link
-    - chain_stay_attachment
-- name: D
-  initial_position: 0.0
-  link_frame_pair:
-  - - rocker_link
-    - shock_attachment
-  - - shock_upper
-    - origin
-- name: E
-  initial_position: 0.0
-  link_frame_pair:
-  - - shock_lower
-    - origin
-  - - front_triangle
-    - shock_attachment
+    - seat_stay_attachment

@@ -5,7 +5,7 @@ from .frame import Frame
 
 class Joint:
 
-    def __init__(self, parent, child, initial_position=0.0,
+    def __init__(self, parent, child, name=None, initial_position=0.0,
                  initial_velocity=0.0):
         pass
 
@@ -18,8 +18,9 @@ class Joint:
 
 class RevoluteJoint(Joint):
 
-    def __init__(self, parent, child, initial_position=0.0,
+    def __init__(self, parent, child, name=None, initial_position=0.0,
                  initial_velocity=0.0):
+        self.name = name
         self.index = 0
         self.parent = parent
         self.child = child
@@ -48,8 +49,9 @@ class RevoluteJoint(Joint):
 
 class PrismaticJoint(Joint):
 
-    def __init__(self, parent, child, initial_position=0.0,
+    def __init__(self, parent, child, name=None, initial_position=0.0,
                  initial_velocity=0.0):
+        self.name = name
         self.index = 0
         self.parent = parent
         self.child = child
@@ -77,7 +79,8 @@ class PrismaticJoint(Joint):
 
 
 class RigidJoint(Joint):
-    def __init__(self, parent, child, x=0.0, y=0.0, theta=0.0):
+    def __init__(self, parent, child, name=None, x=0.0, y=0.0, theta=0.0):
+        self.name = name
         self.index = 0
         c = np.cos(np.radians(theta))
         s = np.sin(np.radians(theta))

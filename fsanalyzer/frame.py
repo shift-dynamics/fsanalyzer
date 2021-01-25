@@ -21,11 +21,14 @@ class Frame:
     def update(self):
         self.absolute = self.parent_frame.absolute * self.relative
 
-    def draw(self, ax, scale=1.0, draw_label=True):
+    def get_position(self):
+        return np.array(self.absolute[:2, 2]).flatten()
+
+    def draw(self, ax, scale=1.0, draw_labels=True):
         origin = self.absolute * np.matrix([[0.0], [0.0], [1.0]])
         x = self.absolute * np.matrix([[scale], [0.0], [1.0]])
         y = self.absolute * np.matrix([[0.0], [scale], [1.0]])
         ax.plot([origin[0, 0], x[0, 0]], [origin[1, 0], x[1, 0]], color="red")
         ax.plot([origin[0, 0], y[0, 0]], [origin[1, 0], y[1, 0]], color="blue")
-        if(draw_label):
+        if(draw_labels):
             ax.text(origin[0, 0], origin[1, 0], self.name)

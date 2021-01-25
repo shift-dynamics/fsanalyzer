@@ -68,50 +68,48 @@ links:
     geometry.  This allows fixing suspension geometry relative to bottom bracket, 
     while experimenting with changing stack and reach dimensions. At 
     present, the front_triangle is the only link that supports an additional
-    keyword to specify dimensions relative to another frame.
+    keyword to specify dimensions relative to a coordinate frame.
   frames:
   - name: chain_stay_attachment
     offset:
-    - bottom_bracket.x - 40.0
-    - bottom_bracket.y + 20.0
+    - bottom_bracket.x - 20.0
+    - bottom_bracket.y + 60.0
   - name: rocker_link_attachment
     offset:
-    - bottom_bracket.x - 10.0
-    - bottom_bracket.y + 100.0
+    - bottom_bracket.x + 10.0
+    - bottom_bracket.y + 190.0
   - name: shock_attachment
     offset:
-    - bottom_bracket.x + 30.0
+    - bottom_bracket.x + 40.0
     - bottom_bracket.y + 40.0
 - name: chain_stay_link
   description: origin at proximal end of link (closer to bike front triangle),
     chain_stay_link is a required link name
   frames:
-  - name: distal
+  - name: seat_stay_attachment
     offset:
-    - -400.0
-    - -20.0
+    - -355.0
+    - -30.0
 - name: seat_stay_link
-  description: origin at rear wheel axle, seat_stay_link is a required link name
+  description: seat_stay_link is a required link name, origin is at end of link
+    closest to wheel, the rocker_link_attachment frame will be
+    overwritten after loading to close loop closure constraints
   frames:
-  - name: chain_stay_attachment
-    offset:
-    - 40.0
-    - -10.0
   - name: rocker_link_attachment
     offset:
-    - 400.0
-    - 200.0
+    - 330.0
+    - 230.0
 - name: rocker_link
   description: origin at attachment to frame front triangle
   frames:
   - name: seat_stay_attachment
     offset:
-    - -30.0
-    - 20.0
+    - -70.0
+    - 60.0
   - name: shock_attachment
     offset:
-    - 30.0
-    - 25.0
+    - 40.0
+    - 40.0
 
 joints:
 - name: front_triangle_to_chain_stay_link
@@ -132,9 +130,9 @@ joints:
   initial_position: 0.0
   link_frame_pair:
   - - chain_stay_link
-    - distal
+    - seat_stay_attachment
   - - seat_stay_link
-    - chain_stay_attachment
+    - origin
 - name: seat_stay_link_to_rocker_link
   initial_position: 0.0
   link_frame_pair:

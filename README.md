@@ -2,8 +2,6 @@
 A work in progress tool for plotting bicycle suspension antisquat and leverage
 rate curves
 
-Not much here yet, check back later.
-
 ![](data/antisquat_figure.png)
 
 
@@ -32,8 +30,8 @@ To use the package in your python code:
 from fsanalyzer.kinematics import FsAnalyzer
 
 if __name__ == "__main__":
-    fsanalyzer = FsAnalyzer("config.json")
+    fsanalyzer = FsAnalyzer("config.yaml")
     fsanalyzer.draw()
 ```
-where `config.json` is the path to a json configuration file, see 
-`data/example.json` for an example of the syntax.
+where `config.yaml` is the path to a yaml configuration file, see 
+`data/example.yaml` for an example of the syntax.
